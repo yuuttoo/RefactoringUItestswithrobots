@@ -30,43 +30,33 @@ class HomeScreenTest: IvyAndroidTest() {
 
     @Test
     fun testSelectingDateRange() = runBlocking<Unit> {
-        val date = LocalDate.of(2023, 7, 23)
+        val date = LocalDate.of(2024, 1, 31)
         setDate(date)
 
-        val transaction1 = transactionWithTime(Instant.parse("2023-07-24T09:00:00Z")).copy(
+        val transaction1 = transactionWithTime(Instant.parse("2024-01-31T09:00:00Z")).copy(
             title = "Transaction1"
         )
-        val transaction2 = transactionWithTime(Instant.parse("2023-08-01T09:00:00Z")).copy(
+        val transaction2 = transactionWithTime(Instant.parse("2024-03-01T09:00:00Z")).copy(
             title = "Transaction2"
         )
-        val transaction3 = transactionWithTime(Instant.parse("2023-08-31T09:00:00Z")).copy(
+        val transaction3 = transactionWithTime(Instant.parse("2024-03-31T09:00:00Z")).copy(
             title = "Transaction3"
         )
         db.saveAccountWithTransactions(
             transactions = listOf(transaction1, transaction2, transaction3)
         )
 
-        composeRule.awaitIdle()
-        composeRule.runOnUiThread {
-            navigator.navigate(Home.route)
-        }
-
-        composeRule.onNodeWithText(date.month.name, ignoreCase = true).performClick()
-
-        composeRule
-            .onNodeWithText("August")
-            .assertIsDisplayed()
-            .performClick()
-        composeRule.onNodeWithText("Aug. 01").assertIsDisplayed()
-        composeRule.onNodeWithText("Aug. 31").assertIsDisplayed()
-
-        composeRule.onNodeWithText("Done").performClick()
-
-        composeRule.onNodeWithText("Upcoming").performClick()
-
-        composeRule.onNodeWithText("Transaction1").assertDoesNotExist()
-        composeRule.onNodeWithText("Transaction2").assertIsDisplayed()
-        composeRule.onNodeWithText("Transaction3").assertIsDisplayed()
+        HomeScreenRobot(composeRule)
+            .navigateTo(navigator)
+            .openDateRangeSheet(timeProvider)
+            .selectMonth("February")
+            .assertDateIsDisplayed(1, "February")
+            .assertDateIsDisplayed(29, "February")
+            .clickDone()
+            .clickUpcoming()
+            .assertTransactionDoesNotExist("Transaction1")
+            .assertTransactionIsDisplayed("Transaction2")
+            .assertTransactionIsDisplayed("Transaction3")
     }
 
 }
